@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GND IT TESTING FACILITY</title>
+  <style>
+    :root {
+      --bg-main: #000000;
+      --panel-bg: #0a0a0a;
+      --panel-card: #121212;
+      --border-color: #333333;
+      --accent-primary: #00e5ff;
+      --accent-gold: #ffcc00;
+      --accent-green: #00ff00;
+      --accent-red: #ff2020;
+      --text-bright: #ffffff;
+      --text-muted: #aaaaaa;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+      font-size: 16px;
+    }
+
+    /* STRICTLY NO ROUND EDGES - INDUSTRIAL STANDARD */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; user-select: none; border-radius: 0 !important; }
+    input, select { user-select: text; }
+    body { background-color: var(--bg-main); color: var(--text-bright); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+    /* HEADER */
+    .top-bar { background: #050505; border-bottom: 1px solid var(--border-color); border-top: 6px solid var(--accent-gold); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .top-bar h1 { font-size: 1.6rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; color: var(--accent-gold); }
+    .top-bar .sub { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .top-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .sys-pill { background: #000; border: 1px solid var(--border-color); padding: 8px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; font-weight: bold; text-transform: uppercase; color: var(--accent-primary); }
+    .dot { width: 10px; height: 10px; background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+
+    /* NAVIGATION */
+    .wizard-nav { display: flex; background: #050505; border-bottom: 1px solid var(--border-color); padding: 0 20px; overflow-x: auto; }
+    .step-tab { flex: 1; min-width: 130px; padding: 15px 10px; text-align: center; font-size: 0.85rem; font-weight: bold; color: #666; border-bottom: 4px solid transparent; cursor: pointer; text-transform: uppercase; transition: all 0.2s; white-space: nowrap; }
+    .step-tab:hover:not(.locked) { background: #0d0d0d; }
+    .step-tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); background: #111; }
+    .step-tab.completed { color: var(--accent-green); }
+    .step-tab.completed::before { content: "✓ "; }
+    .step-tab.locked { cursor: not-allowed; opacity: 0.3; }
+
+    /* VIEWPORT */
+    .main-viewport { flex: 1; padding: 25px 30px; max-width: 1600px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+    .page { display: none; flex-direction: column; gap: 20px; }
+    .page.active { display: flex; }
+
+    /* CARDS */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
+    .card { background: var(--panel-bg); border: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+    .card-title { font-size: 1.1rem; font-weight: bold; color: var(--accent-primary); text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; letter-spacing: 1px; }
+    .notice { border: 1px solid var(--accent-gold); background: #1a1500; color: #e6c34d; padding: 10px 14px; font-size: 0.85rem; line-height: 1.4; }
+
+    /* FORMS & INPUTS */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+    .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input, select { background: #000; border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; font-size: 1rem; outline: none; transition: border 0.2s; width: 100%; }
+    input[readonly] { color: #888; }
+    input:focus, select:focus { border-color: var(--accent-primary); }
+
+    .stat-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 15px; background: #050505; border: 1px solid var(--border-color); font-size: 0.95rem; text-transform: uppercase; }
+    .stat-val { font-weight: bold; font-family: var(--font-mono); color: var(--accent-gold); font-size: 1.05rem; text-align: right; }
+    .ok { color: var(--accent-green) !important; }
+    .bad { color: var(--accent-red) !important; }
+    .warn { color: var(--accent-gold) !important; }
+
+    /* BINARY LOAD BANK */
+    .phase-matrix-container { display: flex; gap: 15px; flex-wrap: wrap; }
+    .phase-col { flex: 1; min-width: 250px; background: #111; border: 1px solid var(--border-color); padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    .phase-title { text-align: center; font-weight: bold; font-size: 0.9rem; margin-bottom: 2px; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 1px; }
+    .bank-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+    .chip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .chip { background: var(--panel-card); border: 1px solid var(--border-color); color: #fff; padding: 6px 4px; cursor: pointer; text-align: center; display: flex; flex-direction: column; gap: 2px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase; transition: all 0.15s; }
+    .chip .w { font-family: var(--font-mono); color: var(--accent-gold); font-size: 0.72rem; }
+    .chip .s { font-size: 0.62rem; color: #777; }
+    .chip:hover:not(:disabled) { border-color: var(--accent-primary); }
+    .chip.on { border-color: var(--accent-gold); background: #332b00; }
+    .chip.on .s { color: var(--accent-gold); }
+    .chip.latched { border-color: var(--accent-green); background: #002a00; }
+    .chip.latched .s { color: var(--accent-green); }
+    .chip:disabled { cursor: not-allowed; }
+    .code-line { font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); }
+
+    /* BUTTONS */
+    .nav-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
+    .grp { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .btn { padding: 13px 24px; border: 2px solid transparent; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; letter-spacing: 1px; background: transparent; color: #fff; }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #333 !important; background: #111 !important; color: #555 !important; }
+    .btn-sm { padding: 8px 14px; font-size: 0.78rem; }
+    .btn-primary { background: var(--accent-primary); color: #000; }
+    .btn-warning { background: var(--accent-gold); color: #000; }
+    .btn-ghost { border-color: #555; color: #ccc; }
+    .btn-ghost:hover:not(:disabled) { border-color: #fff; color: #fff; }
+    .btn-revert { border-color: var(--accent-gold); color: var(--accent-gold); }
+    .btn-revert:hover:not(:disabled) { background: var(--accent-gold); color: #000; }
+    .btn-danger { border-color: var(--accent-red); color: var(--accent-red); }
+    .btn-danger:hover:not(:disabled) { background: var(--accent-red); color: #fff; }
+
+    /* PNEUMATICS */
+    .fixture-desc { font-size: 0.9rem; color: var(--text-muted); text-align: center; text-transform: uppercase; margin-bottom: 10px; }
+    .fixture-container { display: flex; justify-content: center; gap: 40px; margin: 30px 0; min-height: 250px; flex-wrap: wrap; }
+    .pole-fixture { position: relative; width: 100px; height: 240px; background: #050505; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .pneumatic-rod { position: absolute; width: 40px; height: 80px; background: #222; border: 1px solid #444; transition: transform 0.4s ease, background 0.4s ease; z-index: 2; }
+    .rod-top { top: -40px; transform: translateY(-30px); border-bottom: 6px solid var(--accent-gold); }
+    .rod-bot { bottom: -40px; transform: translateY(30px); border-top: 6px solid var(--accent-gold); }
+    .pole-fixture.clamped .rod-top { transform: translateY(22px); background: #ccc; }
+    .pole-fixture.clamped .rod-bot { transform: translateY(-22px); background: #ccc; }
+    .mcb-body { width: 80px; height: 130px; background: #111; border: 1px solid #555; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+    .dut-switch { width: 30px; height: 16px; background: var(--accent-red); margin-bottom: 15px; border: 1px solid #000; transition: background 0.3s; }
+    .pole-fixture.clamped .dut-switch { background: var(--accent-green); }
+
+    /* INTERLOCK PAGE */
+    .il-rows { display: flex; flex-direction: column; gap: 8px; }
+    .btn-inline { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+    .encl-wrap { display: flex; gap: 25px; align-items: center; justify-content: center; flex-wrap: wrap; }
+    #enclosure-svg svg { width: 300px; max-width: 100%; height: auto; }
+    .lamps { display: flex; flex-direction: column; gap: 18px; }
+    .lamp { width: 130px; height: 90px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.3rem; border: 2px solid; opacity: 0.2; transition: all 0.25s; }
+    .lamp.fault { border-color: var(--accent-red); color: var(--accent-red); }
+    .lamp.ready { border-color: var(--accent-green); color: var(--accent-green); }
+    .lamp.fault.lit { background: var(--accent-red); color: #fff; opacity: 1; box-shadow: 0 0 25px var(--accent-red); }
+    .lamp.ready.lit { background: var(--accent-green); color: #000; opacity: 1; box-shadow: 0 0 25px var(--accent-green); }
+    .fan { transform-box: fill-box; transform-origin: center; }
+    .fan.spin { animation: spin 0.35s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* SLD & OSCILLOSCOPE */
+    .exec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 20px; }
+    .scope-box, .sld-box { background: #000; border: 1px solid var(--border-color); height: 380px; position: relative; overflow: hidden; padding: 10px; }
+    canvas { width: 100%; height: 100%; display: block; }
+    .sld-svg { width: 100%; height: 100%; }
+    .sld-line { stroke: #555; stroke-width: 3; fill: none; transition: stroke 0.1s; }
+    .sld-text { fill: var(--text-muted); font-size: 11px; font-family: var(--font-mono); font-weight: bold; }
+    .comp { fill: none; stroke: #aaa; stroke-width: 2; }
+    .pg .scr-box { stroke: #aaa; }
+    .pg .mcb-closed { display: block; stroke: var(--accent-primary); stroke-width: 3; }
+    .pg .mcb-open { display: none; stroke: var(--accent-red); stroke-width: 3; }
+    .pg.on .sld-line { stroke: var(--accent-gold); }
+    .pg.on .scr-box { stroke: var(--accent-gold); fill: #332b00; }
+    .pg.open .mcb-closed { display: none; }
+    .pg.open .mcb-open { display: block; }
+    .pg.cut .scr-box { stroke: var(--accent-red); }
+    .sensor-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .tile { background: #050505; border: 1px solid var(--border-color); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .tile .t-name { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+    .tile .t-val { font-family: var(--font-mono); font-size: 1.15rem; color: var(--accent-primary); font-weight: bold; }
+
+    /* REPORT */
+    .report-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 8px; font-family: var(--font-mono); }
+    .report-table th, .report-table td { border: 1px solid var(--border-color); padding: 10px; text-align: left; }
+    .report-table th { background: #111; color: var(--accent-primary); text-transform: uppercase; letter-spacing: 1px; }
+    .verdict-box { padding: 15px; text-align: center; font-size: 1.4rem; font-weight: bold; border: 2px solid var(--border-color); background: #050505; text-transform: uppercase; letter-spacing: 2px; }
+    .verdict-box.pass { border-color: var(--accent-green); color: var(--accent-green); background: #001a00; }
+    .verdict-box.fail { border-color: var(--accent-red); color: var(--accent-red); background: #1a0000; }
+    .print-header { text-align: center; border-bottom: 2px solid var(--accent-gold); padding-bottom: 10px; margin-bottom: 10px; }
+    .print-header h1 { font-size: 1.5rem; color: var(--accent-gold); letter-spacing: 2px; }
+    .print-header h2 { font-size: 1.05rem; text-transform: uppercase; margin: 4px 0; }
+    .print-header p { color: var(--text-muted); font-size: 0.9rem; }
+    .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    .print-section h3 { font-size: 0.95rem; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 8px; text-transform: uppercase; }
+    .print-section p { font-family: var(--font-mono); font-size: 0.88rem; margin-bottom: 5px; color: #ddd; }
+    .scope-img { width: 100%; border: 1px solid var(--border-color); display: block; }
+    .report-note { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
+    .sign-row { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); }
+    .sign-row div { border-top: 1px solid #666; padding-top: 6px; }
+    #page-6 * { user-select: text; }
+
+    /* EVENT LOG */
+    .log-panel { border-top: 1px solid var(--border-color); background: #050505; padding: 8px 30px 10px; }
+    .log-head { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px; }
+    #log-list { height: 92px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.78rem; display: flex; flex-direction: column; gap: 2px; }
+    .log-line { color: #9a9a9a; }
+    .log-line.warn { color: var(--accent-gold); }
+    .log-line.bad { color: var(--accent-red); }
+    .log-line.ok { color: var(--accent-green); }
+
+    /* STRICT A4 INDUSTRIAL PRINT FORMAT */
+    @media print {
+      @page { size: A4 portrait; margin: 15mm; }
+      body { background: #fff !important; color: #000 !important; font-family: "Arial", sans-serif !important; font-size: 10pt !important; display: block !important; }
+      .main-viewport { padding: 0 !important; max-width: 100% !important; display: block !important; }
+      .top-bar, .wizard-nav, .nav-row, .log-panel, button { display: none !important; }
+      .page { display: none !important; }
+      #page-6 { display: block !important; }
+      .card { border: none !important; background: transparent !important; padding: 0 !important; margin-bottom: 15px; }
+      .print-header { border-bottom: 2px solid #000 !important; }
+      .print-header h1 { font-size: 18pt !important; color: #000 !important; }
+      .print-header h2 { font-size: 12pt !important; color: #000 !important; }
+      .print-header p { color: #000 !important; }
+      .print-grid { gap: 30px; margin-bottom: 15px; }
+      .print-section { break-inside: avoid; margin-bottom: 12px; }
+      .print-section h3 { font-size: 11pt !important; color: #000 !important; border-bottom: 1px solid #000 !important; }
+      .print-section p { font-size: 9.5pt !important; color: #000 !important; }
+      .report-table { border: 1px solid #000 !important; }
+      .report-table th { background: #eee !important; color: #000 !important; border: 1px solid #000 !important; font-size: 9.5pt !important; padding: 7px !important; }
+      .report-table td { border: 1px solid #000 !important; color: #000 !important; font-size: 9.5pt !important; padding: 7px !important; }
+      .verdict-box, .verdict-box.pass, .verdict-box.fail { border: 2px solid #000 !important; background: #fff !important; color: #000 !important; font-size: 14pt !important; padding: 12px !important; margin-top: 15px !important; }
+      .scope-img { border: 1px solid #000 !important; }
+      .report-note { color: #000 !important; }
+      .sign-row { color: #000 !important; margin-top: 40px; }
+      .sign-row div { border-top: 1px solid #000 !important; }
+      .ok, .bad, .warn { color: #000 !important; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top-bar">
+    <div>
+      <h1>GND IT TESTING FACILITY</h1>
+      <span class="sub">1.5kA Industrial MCB Test Bench | Multi-Pole Binary R-L Bank &amp; Fast DAQ</span>
+    </div>
+    <div class="top-right">
+      <div class="sys-pill"><span class="dot"></span> SIM MODE | 3V RMS | Multi-Channel SCR | A4 Print Ready</div>
+      <button class="btn btn-revert btn-sm" id="btn-reset-all" onclick="resetAllClick(this)">↺ RESET ALL</button>
+    </div>
+  </header>
+
+  <nav class="wizard-nav">
+    <div class="step-tab active" id="tab-1" onclick="go(1)">1. Configuration</div>
+    <div class="step-tab locked" id="tab-2" onclick="go(2)">2. Impedance Banks</div>
+    <div class="step-tab locked" id="tab-3" onclick="go(3)">3. Pneumatics</div>
+    <div class="step-tab locked" id="tab-4" onclick="go(4)">4. Interlocks</div>
+    <div class="step-tab locked" id="tab-5" onclick="go(5)">5. Fault Injection</div>
+    <div class="step-tab locked" id="tab-6" onclick="go(6)">6. Data Log</div>
+  </nav>
+
+  <main class="main-viewport">
+
+    <!-- ============ PAGE 1: CONFIGURATION ============ -->
+    <section class="page active" id="page-1">
+      <div class="notice">
+        <strong>Prototype scope:</strong> functional trip verification at 3 V RMS, up to 1.5 kA, using the synthesized R-L bank. It is
+        <strong>not</strong> an Icn / Ics breaking-capacity certification under IEC 60898-1:2015, which needs the full rated fault level (e.g. up to 10 kA) in a high-power lab.
+        DAQ values in this page are simulated from the circuit model.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">DUT (Device Under Test)</div>
+          <div class="field">
+            <label>MCB Pole Configuration</label>
+            <select id="cfg-poles" onchange="onCfgChange()">
+              <option value="1P">Single Pole (1P)</option>
+              <option value="SPN">Single Pole + Switched Neutral (SPN)</option>
+              <option value="2P">Double Pole (DP)</option>
+              <option value="3P">Three Pole (TP)</option>
+              <option value="4P">Four Pole (FP)</option>
+            </select>
+          </div>
+          <div class="field-pair">
+            <div class="field">
+              <label>Rated Current In (A)</label>
+              <select id="cfg-in" onchange="onCfgChange()">
+                <option>0.5</option><option>1</option><option>2</option><option>4</option><option>6</option>
+                <option>10</option><option>16</option><option>20</option><option>25</option>
+                <option selected>32</option><option>40</option><option>50</option><option>63</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Trip Curve</label>
+              <select id="cfg-curve" onchange="onCfgChange()">
+                <option value="B">B (3-5 x In)</option>
+                <option value="C" selected>C (5-10 x In)</option>
+                <option value="D">D (10-20 x In)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-pair">
+            <div class="field">
+              <label>Rated Icn (nameplate)</label>
+              <select id="cfg-icn" onchange="onCfgChange()">
+                <option value="3000">3 kA</option>
+                <option value="4500">4.5 kA</option>
+                <option value="6000" selected>6 kA</option>
+                <option value="10000">10 kA</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>I²t Acceptance Limit (A²s)</label>
+              <input type="number" id="cfg-i2t" value="100000" min="1000" step="1000" onchange="onCfgChange()" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Source &amp; Test Point</div>
+          <div class="field-pair">
+            <div class="field"><label>Injection Source (Vrms)</label><input type="number" id="cfg-v" value="3.0" readonly /></div>
+            <div class="field"><label>Line Frequency (Hz)</label><input type="number" id="cfg-f" value="50" readonly /></div>
+          </div>
+          <div class="field">
+            <label>Target Prospective Current Isc (RMS)</label>
+            <select id="cfg-isc" onchange="onCfgChange()">
+              <option value="500">500 A</option>
+              <option value="1000" selected>1,000 A (1 kA)</option>
+              <option value="1500">1,500 A (1.5 kA)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Target Power Factor (cos φ)</label>
+            <select id="cfg-pf" onchange="onCfgChange()">
+              <option value="1">1.0 (Pure Resistive)</option>
+              <option value="0.8">0.8 (Inductive)</option>
+              <option value="0.6">0.6 (Inductive)</option>
+              <option value="0.5" selected>0.5 (Severe Inductive)</option>
+              <option value="0.4">0.4 (Extreme Inductive)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>SCR Closing Angle α (point-on-wave)</label>
+            <select id="cfg-alpha" onchange="onCfgChange()">
+              <option value="0" selected>0° (voltage zero - max asymmetry, inductive)</option>
+              <option value="30">30°</option>
+              <option value="45">45°</option>
+              <option value="60">60°</option>
+              <option value="90">90° (voltage peak - symmetrical, inductive)</option>
+            </select>
+          </div>
+          <div class="field-pair">
+            <div class="field"><label>Source/Busbar R (mΩ)</label><input type="number" id="cfg-srcr" value="0.3" min="0" step="0.05" onchange="onCfgChange()" /></div>
+            <div class="field"><label>Source/Busbar L (μH)</label><input type="number" id="cfg-srcl" value="0.8" min="0" step="0.1" onchange="onCfgChange()" /></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Test Identity</div>
+          <div class="field"><label>Lead Engineer</label><input type="text" id="cfg-eng" value="Krishna Rakesh Kumar Jaiswar" /></div>
+          <div class="field"><label>DUT ID / Serial</label><input type="text" id="cfg-dut" value="MCB-001" /></div>
+          <button class="btn btn-warning" onclick="calculateBanks()">⚡ Compute Impedance Targets &amp; Auto-Solve Bank</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Calculated Circuit Targets (Per Pole)</div>
+          <div class="stat-row"><span>Target Total Impedance |Z|</span><span class="stat-val" id="disp-z">-- mΩ</span></div>
+          <div class="stat-row"><span>Target Resistance (R)</span><span class="stat-val" id="disp-r">-- mΩ</span></div>
+          <div class="stat-row"><span>Target Reactance (XL)</span><span class="stat-val" id="disp-xl">-- mΩ</span></div>
+          <div class="stat-row"><span>Target Inductance (L)</span><span class="stat-val" id="disp-l">-- μH</span></div>
+          <div class="stat-row"><span>Bank R needed (minus source)</span><span class="stat-val" id="disp-rb">-- mΩ</span></div>
+          <div class="stat-row"><span>Bank L needed (minus source)</span><span class="stat-val" id="disp-lb">-- μH</span></div>
+          <div class="stat-row"><span>Magnetic Trip Band</span><span class="stat-val" id="disp-band">--</span></div>
+          <div class="stat-row"><span>Expected Behaviour</span><span class="stat-val" id="disp-expect">--</span></div>
+          <div class="stat-row"><span>Bench Pulse Window</span><span class="stat-val">40 ms (2 cycles)</span></div>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <div class="grp">
+          <button class="btn btn-revert" onclick="revertStep(1)">↺ Revert Step 1 (Defaults)</button>
+        </div>
+        <div class="grp">
+          <button class="btn btn-primary" id="btn-goto-p2" onclick="advance(2)" disabled>Configure Load Banks ➔</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 2: BANKS ============ -->
+    <section class="page" id="page-2">
+      <div class="card">
+        <div class="card-title">Synchronous Binary R-L Load Bank Controller</div>
+        <div class="code-line" id="bank-code">--</div>
+        <div class="phase-matrix-container" id="phase-matrix-container"></div>
+        <div class="report-note">Click a contactor chip to insert (gold) or bypass a binary-weighted segment. Bits are synchronous across all poles. Contactors change state only while the circuit is de-energized; once latched they are locked until reverted.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Hardware Quantization Output</div>
+        <div class="stat-row"><span>Total Loop R (bank + source)</span><span class="stat-val" id="out-r">-- mΩ</span></div>
+        <div class="stat-row"><span>Total Loop L (bank + source)</span><span class="stat-val" id="out-l">-- μH</span></div>
+        <div class="stat-row"><span>Synthesized Fault Current (Per Pole)</span><span class="stat-val" id="actual-i">-- A</span></div>
+        <div class="stat-row"><span>Synthesized Power Factor</span><span class="stat-val" id="actual-pf">--</span></div>
+        <div class="stat-row"><span>Error vs Target</span><span class="stat-val" id="out-err">--</span></div>
+        <div class="stat-row"><span>Status</span><span class="stat-val" id="out-status">--</span></div>
+      </div>
+
+      <div class="nav-row">
+        <div class="grp">
+          <button class="btn btn-ghost" onclick="go(1)">◀ Back</button>
+          <button class="btn btn-revert" onclick="revertStep(2)">↺ Revert Step 2 (Auto-Solve &amp; Unlatch)</button>
+        </div>
+        <div class="grp">
+          <button class="btn btn-ghost" id="btn-autosolve" onclick="autoSolveClick()">🔍 Auto-Solve Best Combination</button>
+          <button class="btn btn-warning" id="btn-latch" onclick="latchContactors()">⚡ Latch PLC Contactors</button>
+          <button class="btn btn-primary" id="btn-bank-ok" onclick="advance(3)" disabled>Proceed to DUT Clamping ➔</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 3: PNEUMATICS ============ -->
+    <section class="page" id="page-3">
+      <div class="card">
+        <div class="card-title">High-Pressure Pneumatic Fixture</div>
+        <div class="fixture-desc">Solid copper pressure rods engaged via pneumatic cylinders. Ensures ultra-low resistance test joints across all poles without screwing or unscrewing cables.</div>
+        <div class="fixture-container" id="pneumatic-container"></div>
+        <div class="stat-row" style="max-width:800px; width:100%; margin: 15px auto;">
+          <span>Terminal Clamping Pressure (All Poles)</span>
+          <span class="stat-val bad" id="clamp-status">DEPRESSURIZED (0.0 BAR)</span>
+        </div>
+        <div style="display:flex; justify-content:center;">
+          <button class="btn btn-warning" id="btn-engage" onclick="engagePneumatics()">🔽 Engage Pneumatic Cylinders</button>
+        </div>
+      </div>
+      <div class="nav-row">
+        <div class="grp">
+          <button class="btn btn-ghost" onclick="go(2)">◀ Back</button>
+          <button class="btn btn-revert" onclick="revertStep(3)">↺ Revert Step 3 (Release Cylinders)</button>
+        </div>
+        <div class="grp">
+          <button class="btn btn-primary" id="btn-mount-ok" onclick="advance(4)" disabled>Verify Interlocks ➔</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 4: INTERLOCKS ============ -->
+    <section class="page" id="page-4">
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Safety &amp; Environmental Diagnostics</div>
+          <div class="il-rows" id="il-rows"></div>
+          <div class="btn-inline">
+            <button class="btn btn-warning btn-sm" id="btn-door" onclick="toggleDoor()">🔒 Close &amp; Lock Blast Door</button>
+            <button class="btn btn-danger btn-sm" id="btn-estop" onclick="toggleEstop()">⛔ Press E-Stop (test)</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">System Readiness - Test Enclosure</div>
+          <div class="encl-wrap">
+            <div id="enclosure-svg"></div>
+            <div class="lamps">
+              <div class="lamp fault" id="lamp-fault">FAULT</div>
+              <div class="lamp ready" id="lamp-ready">READY</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="nav-row">
+        <div class="grp">
+          <button class="btn btn-ghost" onclick="go(3)">◀ Back</button>
+          <button class="btn btn-revert" onclick="revertStep(4)">↺ Revert Step 4 (Open Door, Clear E-Stop)</button>
+        </div>
+        <div class="grp">
+          <button class="btn btn-primary" id="btn-arm" onclick="armFiring()" disabled>Arm Firing Sequence ➔</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 5: FAULT INJECTION ============ -->
+    <section class="page" id="page-5">
+      <div class="sensor-strip">
+        <div class="tile"><span class="t-name">Source Voltage (Vrms)</span><span class="t-val" id="sens-v">3.00 V</span></div>
+        <div class="tile"><span class="t-name">Live Current (max pole)</span><span class="t-val" id="sens-i">0 A</span></div>
+        <div class="tile"><span class="t-name">Bank Temperature</span><span class="t-val" id="sens-temp">32.0 °C</span></div>
+        <div class="tile"><span class="t-name">Clamp Pressure</span><span class="t-val" id="sens-p">6.8 bar</span></div>
+        <div class="tile"><span class="t-name">Exhaust Fan</span><span class="t-val" id="sens-fan">STANDBY</span></div>
+      </div>
+
+      <div class="exec-grid">
+        <div class="card">
+          <div class="card-title">Multi-Channel DAQ Oscilloscope (100 kHz)</div>
+          <div class="scope-box"><canvas id="scopeCanvas"></canvas></div>
+          <div class="stat-row"><span>Sync Trigger</span><span class="stat-val" id="live-setup-i">-- A</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Circuit Single Line Diagram (SLD)</div>
+          <div class="sld-box"><svg class="sld-svg" viewBox="0 0 440 310" id="sld-svg" preserveAspectRatio="xMidYMid meet"></svg></div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card" style="align-items:center; justify-content:center; background:#050505;">
+          <button class="btn btn-danger" id="btn-fire" onclick="fireSCR()" style="padding:25px; font-size:1.4rem; width:100%;">💥 Inject Fault Current</button>
+        </div>
+        <div class="card">
+          <div class="stat-row"><span>Peak Current (Max Ip)</span><span class="stat-val" id="res-ip">-- A</span></div>
+          <div class="stat-row"><span>Max Let-Through (I²t)</span><span class="stat-val" id="res-i2t">-- A²s</span></div>
+          <div class="stat-row"><span>Ganged Clearing Time</span><span class="stat-val" id="res-time">-- ms</span></div>
+          <div class="verdict-box" id="shot-verdict" style="font-size:1.05rem; padding:10px; color:#666;">SYSTEM IDLE</div>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <div class="grp">
+          <button class="btn btn-ghost" onclick="go(4)">◀ Back</button>
+          <button class="btn btn-revert" onclick="revertStep(5)">↺ Revert Step 5 (Reset MCB &amp; Scope)</button>
+        </div>
+        <div class="grp">
+          <button class="btn btn-primary" id="btn-rep-ok" onclick="generateReport()" disabled>View Data Log ➔</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 6: REPORT ============ -->
+    <section class="page" id="page-6">
+      <div class="card" id="report-section">
+        <div class="print-header">
+          <h1>GND IT TESTING FACILITY</h1>
+          <h2>Short-Circuit Trip Validation Report</h2>
+          <p>Report No: <span id="rep-id">--</span> &nbsp;|&nbsp; Lead Engineer: <span id="rep-eng">--</span></p>
+        </div>
+
+        <div class="print-grid">
+          <div class="print-section">
+            <h3>Test Specification</h3>
+            <p><strong>Date:</strong> <span id="rep-date"></span></p>
+            <p><strong>DUT ID:</strong> <span id="rep-dut"></span></p>
+            <p><strong>DUT Config:</strong> <span id="rep-poles"></span></p>
+            <p><strong>DUT Rating:</strong> <span id="rep-rating"></span></p>
+            <p><strong>Voltage Source:</strong> 3.0 Vrms @ 50 Hz</p>
+            <p><strong>Target Isc (RMS):</strong> <span id="rep-target-i"></span> A</p>
+            <p><strong>Target cos φ:</strong> <span id="rep-pf"></span></p>
+            <p><strong>Closing Angle α:</strong> <span id="rep-alpha"></span></p>
+          </div>
+          <div class="print-section">
+            <h3>Hardware &amp; Synthesized Circuit</h3>
+            <p><strong>Bank Code:</strong> <span id="rep-code"></span></p>
+            <p><strong>Loop R / L:</strong> <span id="rep-rl"></span></p>
+            <p><strong>Synthesized Isc / cos φ:</strong> <span id="rep-synth"></span></p>
+            <p><strong>Clamping:</strong> Pneumatic block (6.8 bar)</p>
+            <p><strong>Switching Element:</strong> Multi-channel SCR sync</p>
+            <p><strong>Data Acquisition:</strong> 100 kHz, 4000 samples/ch</p>
+            <p><strong>Bank Temp (at shot):</strong> <span id="rep-temp"></span></p>
+          </div>
+        </div>
+
+        <div class="print-section">
+          <h3>Captured Waveform</h3>
+          <img id="rep-scope" class="scope-img" alt="Captured waveform" />
+        </div>
+
+        <div class="print-section">
+          <h3>Pole / Phase Telemetry &amp; Results</h3>
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Pole</th><th>Peak Current (Ip)</th><th>Let-Through (I²t)</th><th>Contact Opening</th><th>Total Clearing</th><th>Verdict</th>
+              </tr>
+            </thead>
+            <tbody id="rep-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="print-section">
+          <h3>Trip Analysis</h3>
+          <p id="rep-analysis"></p>
+        </div>
+
+        <div class="verdict-box" id="rep-verdict">--</div>
+
+        <div class="report-note" id="rep-note"></div>
+        <div class="sign-row"><div>Prepared by: <span id="rep-sign"></span></div><div>Reviewed / Approved by:</div></div>
+      </div>
+
+      <div class="nav-row">
+        <div class="grp">
+          <button class="btn btn-ghost" onclick="go(5)">◀ Back</button>
+          <button class="btn btn-revert" onclick="revertStep(6)">↺ Revert Step 6 (Discard Shot &amp; Re-test)</button>
+        </div>
+        <div class="grp">
+          <button class="btn btn-warning" onclick="window.print()">🖨️ Print Report (A4 PDF)</button>
+          <button class="btn btn-primary" onclick="resetAll()">🔄 Initiate New Test</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="log-panel">
+    <div class="log-head">System Event Log</div>
+    <div id="log-list"></div>
+  </footer>
+
+  <script>
+    'use strict';
+
+    /* ================= CONSTANTS ================= */
+    const $ = id => document.getElementById(id);
+    const F0 = 50;
+    const W = 2 * Math.PI * F0;
+    const WIN_MS = 40, FS = 100000, NS = FS * WIN_MS / 1000;      // 40 ms window, 100 kHz, 4000 samples
+    const NBITS = 6, R_STEP = 0.2, L_STEP = 0.6;                    // binary weights: mΩ and μH
+    const BENCH_MAX_A = 1500;
+    const V_SRC = 3.0;
+
+    const POLE_CFG = {
+      '1P':  { name: 'Single Pole (1P)',                        labels: ['L1'] },
+      'SPN': { name: 'Single Pole + Switched Neutral (SPN)',    labels: ['L1', 'N'] },
+      '2P':  { name: 'Double Pole (DP)',                        labels: ['L1', 'L2'] },
+      '3P':  { name: 'Three Pole (TP)',                         labels: ['L1', 'L2', 'L3'] },
+      '4P':  { name: 'Four Pole (FP)',                          labels: ['L1', 'L2', 'L3', 'N'] }
+    };
+    const COLORS = { L1: '#ff3030', L2: '#ffe600', L3: '#2f9bff', N: '#ffffff' };
+    const SHIFT  = { L1: 0, L2: 120, L3: 240, N: 0 };               // degrees of source phase shift
+    const CURVES = { B: { lo: 3, hi: 5 }, C: { lo: 5, hi: 10 }, D: { lo: 10, hi: 20 } };
+
+    const DEFAULTS = { 'cfg-poles': '1P', 'cfg-in': '32', 'cfg-curve': 'C', 'cfg-icn': '6000', 'cfg-i2t': '100000',
+                       'cfg-isc': '1000', 'cfg-pf': '0.5', 'cfg-alpha': '0', 'cfg-srcr': '0.3', 'cfg-srcl': '0.8',
+                       'cfg-eng': 'Krishna Rakesh Kumar Jaiswar', 'cfg-dut': 'MCB-001' };
+
+    /* ================= STATE ================= */
+    let S = freshState();
+    function freshState() {
+      return {
+        page: 1, maxStep: 1, done: {},
+        cfg: null, bank: null,
+        latched: false, latchedReady: false,
+        clamped: false, engaging: false, pressure: 0,
+        door: false, estop: false,
+        bankTemp: 32, fanOn: false,
+        shot: null, firing: false, sld: 'idle', scopeP: 0,
+        report: null,
+        t: { latch: null, press: null, anim: null, fan: null }
+      };
+    }
+
+    /* ================= LOG ================= */
+    function log(msg, lvl) {
+      const el = $('log-list');
+      const d = document.createElement('div');
+      d.className = 'log-line ' + (lvl || '');
+      d.textContent = '[' + new Date().toTimeString().slice(0, 8) + '] ' + msg;
+      el.prepend(d);
+      while (el.children.length > 150) el.removeChild(el.lastChild);
+    }
+
+    /* ================= NAVIGATION ================= */
+    function setTabs() {
+      for (let s = 1; s <= 6; s++) {
+        const t = $('tab-' + s);
+        t.classList.toggle('locked', s > S.maxStep);
+        t.classList.toggle('active', s === S.page);
+        t.classList.toggle('completed', !!S.done[s] && s !== S.page);
+      }
+    }
+    function go(step) {
+      if (step < 1 || step > S.maxStep) return;
+      S.page = step;
+      document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + step));
+      setTabs();
+      ({ 1: renderP1, 2: renderBank, 3: renderPneu, 4: renderInterlocks, 5: renderP5, 6: renderReport })[step]();
+      window.scrollTo({ top: 0 });
+    }
+    function advance(step) {
+      S.done[step - 1] = true;
+      S.maxStep = Math.max(S.maxStep, step);
+      go(step);
+    }
+
+    /* ================= REVERT / RESET ================= */
+    const RESET = {
+      6: function () { S.report = null; },
+      5: function () {
+        cancelAnimationFrame(S.t.anim); clearTimeout(S.t.fan);
+        S.firing = false; S.shot = null; S.sld = 'idle'; S.scopeP = 0; S.fanOn = false;
+      },
+      4: function () { S.door = false; S.estop = false; },
+      3: function () {
+        clearInterval(S.t.press);
+        S.clamped = false; S.engaging = false; S.pressure = 0;
+      },
+      2: function () {
+        clearTimeout(S.t.latch);
+        S.latched = false; S.latchedReady = false;
+        if (S.cfg) S.bank = autoSolve(S.cfg);
+      },
+      1: function () { S.cfg = null; S.bank = null; }
+    };
+    function revertFrom(step) {
+      for (let s = 6; s >= step; s--) { RESET[s](); S.done[s] = false; }
+      S.maxStep = Math.min(S.maxStep, step);
+    }
+    function revertStep(n) {
+      if (n === 6) {                      // page 6 revert = discard this shot and return to step 5
+        revertFrom(5); go(5); log('Step 6 reverted: shot discarded, MCB reset, ready to re-test', 'warn'); return;
+      }
+      revertFrom(n);
+      if (n === 1) restoreDefaultsForm();
+      go(n);
+      log('Step ' + n + ' reverted' + (n < 6 ? ' (later steps re-locked)' : ''), 'warn');
+    }
+    function resetAll() {
+      S.bankTemp = 32;
+      revertFrom(1);
+      restoreDefaultsForm();
+      S.done = {}; S.maxStep = 1;
+      go(1);
+      log('ALL STEPS RESET - new test session', 'warn');
+    }
+    function resetAllClick(btn) {
+      if (!btn.dataset.armed) {
+        btn.dataset.armed = '1';
+        btn.textContent = 'CLICK AGAIN TO CONFIRM';
+        setTimeout(() => { delete btn.dataset.armed; btn.textContent = '↺ RESET ALL'; }, 3000);
+        return;
+      }
+      delete btn.dataset.armed;
+      btn.textContent = '↺ RESET ALL';
+      resetAll();
+    }
+    function restoreDefaultsForm() {
+      Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+    }
+    function onCfgChange() {
+      if (S.cfg || S.maxStep > 1) {
+        revertFrom(1); S.done = {}; S.maxStep = 1;
+        log('Configuration changed - downstream steps reset, recompute required', 'warn');
+      }
+      go(1);
+    }
+
+    /* ================= PAGE 1 : CONFIG ================= */
+    function readForm() {
+      const num = (id, def) => { const v = parseFloat($(id).value); return isNaN(v) || v < 0 ? def : v; };
+      const poleKey = $('cfg-poles').value;
+      return {
+        poleKey, labels: POLE_CFG[poleKey].labels, poleName: POLE_CFG[poleKey].name,
+        In: parseFloat($('cfg-in').value), curve: $('cfg-curve').value, icn: parseFloat($('cfg-icn').value),
+        i2tLimit: num('cfg-i2t', 100000),
+        isc: parseFloat($('cfg-isc').value), pf: parseFloat($('cfg-pf').value), alpha: parseFloat($('cfg-alpha').value),
+        srcR: num('cfg-srcr', 0.3), srcL: num('cfg-srcl', 0.8), v: V_SRC, f: F0
+      };
+    }
+    function calculateBanks() {
+      const f = readForm();
+      const z = f.v / f.isc;                                   // Ω
+      const r = z * f.pf;
+      const xl = z * Math.sqrt(Math.max(0, 1 - f.pf * f.pf));
+      const L = xl / W * 1e6;                                  // μH
+      S.cfg = Object.assign(f, {
+        z, r, xl, L,
+        rBankT: Math.max(0, r * 1000 - f.srcR),
+        lBankT: Math.max(0, L - f.srcL)
+      });
+      S.bank = autoSolve(S.cfg);
+      S.latched = false; S.latchedReady = false;
+      log('Targets computed: Z=' + (z * 1000).toFixed(2) + ' mΩ, R=' + (r * 1000).toFixed(2) + ' mΩ, L=' + L.toFixed(1) + ' μH', 'ok');
+      renderP1();
+    }
+    function renderP1() {
+      const c = S.cfg;
+      const set = (id, t) => { $(id).textContent = t; };
+      const ex = $('disp-expect');
+      ex.className = 'stat-val';
+      if (!c) {
+        ['disp-z', 'disp-r', 'disp-xl', 'disp-rb'].forEach(i => set(i, '-- mΩ'));
+        set('disp-l', '-- μH'); set('disp-lb', '-- μH'); set('disp-band', '--'); set('disp-expect', '--');
+      } else {
+        set('disp-z', (c.z * 1000).toFixed(2) + ' mΩ');
+        set('disp-r', (c.r * 1000).toFixed(2) + ' mΩ');
+        set('disp-xl', (c.xl * 1000).toFixed(2) + ' mΩ');
+        set('disp-l', c.L.toFixed(1) + ' μH');
+        set('disp-rb', c.rBankT.toFixed(2) + ' mΩ');
+        set('disp-lb', c.lBankT.toFixed(1) + ' μH');
+        const cv = CURVES[c.curve];
+        set('disp-band', (cv.lo * c.In).toFixed(0) + ' - ' + (cv.hi * c.In).toFixed(0) + ' A (' + c.curve + ')');
+        const ratio = c.isc / c.In;
+        if (ratio >= cv.hi) { set('disp-expect', ratio.toFixed(1) + '× In → INSTANT TRIP'); ex.classList.add('ok'); }
+        else if (ratio >= cv.lo) { set('disp-expect', ratio.toFixed(1) + '× In → TOLERANCE BAND'); ex.classList.add('warn'); }
+        else { set('disp-expect', ratio.toFixed(1) + '× In → NO MAGNETIC TRIP'); ex.classList.add('bad'); }
+      }
+      $('btn-goto-p2').disabled = !c;
+    }
+
+    /* ================= BANK MATH ================= */
+    function bankResult(cfg, bank) {
+      cfg = cfg || S.cfg; bank = bank || S.bank;
+      const R = cfg.srcR + bank.rb * R_STEP;                   // mΩ
+      const Lh = cfg.srcL + bank.lb * L_STEP;                  // μH
+      const XL = W * Lh * 1e-6 * 1000;                         // mΩ
+      const Z = Math.hypot(R, XL);
+      const I = Z > 0 ? cfg.v / (Z / 1000) : Infinity;
+      const pf = Z > 0 ? R / Z : 1;
+      return { R, L: Lh, XL, Z, I, pf };
+    }
+    function autoSolve(cfg) {
+      let best = null;
+      const maxRb = (1 << NBITS) - 1;
+      for (let rb = 0; rb <= maxRb; rb++) {
+        for (let lb = 0; lb <= maxRb; lb++) {
+          const r = bankResult(cfg, { rb, lb });
+          if (!isFinite(r.I) || r.I > BENCH_MAX_A * 1.05) continue;
+          const cost = Math.pow((r.I - cfg.isc) / cfg.isc / 0.05, 2) + Math.pow((r.pf - cfg.pf) / 0.05, 2);
+          if (!best || cost < best.cost) best = { rb, lb, cost };
+        }
+      }
+      return best ? { rb: best.rb, lb: best.lb } : { rb: maxRb, lb: maxRb };
+    }
+
+    /* ================= PAGE 2 : BANKS ================= */
+    function renderBank() {
+      const cont = $('phase-matrix-container');
+      if (!S.cfg) { cont.innerHTML = '<div class="stat-row">Compute targets on Step 1 first.</div>'; return; }
+      const b = S.bank;
+      let html = '';
+      S.cfg.labels.forEach(lb => {
+        html += '<div class="phase-col"><div class="phase-title" style="color:' + COLORS[lb] + '">POLE ' + lb + '</div>';
+        html += '<div class="bank-label">R-Bank (mΩ, binary)</div><div class="chip-grid">';
+        for (let k = 0; k < NBITS; k++) html += chip('R', k, (b.rb >> k) & 1, (R_STEP * (1 << k)).toFixed(1) + ' mΩ');
+        html += '</div><div class="bank-label">L-Bank (μH, binary)</div><div class="chip-grid">';
+        for (let k = 0; k < NBITS; k++) html += chip('L', k, (b.lb >> k) & 1, (L_STEP * (1 << k)).toFixed(1) + ' μH');
+        html += '</div></div>';
+      });
+      cont.innerHTML = html;
+      updateBankOutputs();
+    }
+    function chip(type, k, on, wTxt) {
+      const cls = 'chip' + (on ? ' on' : '') + (on && S.latched ? ' latched' : '');
+      const st = on ? (S.latched ? 'LATCHED' : 'INSERT') : 'BYPASS';
+      return '<button class="' + cls + '" ' + (S.latched ? 'disabled' : '') + ' onclick="toggleBit(\'' + type + '\',' + k + ')">' +
+             '<span>' + type + k + '</span><span class="w">' + wTxt + '</span><span class="s">' + st + '</span></button>';
+    }
+    function toggleBit(type, k) {
+      if (S.latched || !S.cfg) return;
+      if (type === 'R') S.bank.rb ^= (1 << k); else S.bank.lb ^= (1 << k);
+      renderBank();
+    }
+    function autoSolveClick() {
+      if (S.latched || !S.cfg) return;
+      S.bank = autoSolve(S.cfg);
+      log('Auto-solve: best binary combination selected', 'ok');
+      renderBank();
+    }
+    function updateBankOutputs() {
+      const c = S.cfg, b = S.bank;
+      if (!c) return;
+      const r = bankResult();
+      const bits = n => n.toString(2).padStart(NBITS, '0');
+      $('bank-code').textContent = 'BANK CODE  R = 0b' + bits(b.rb) + ' (' + b.rb + ')   |   L = 0b' + bits(b.lb) + ' (' + b.lb + ')';
+      $('out-r').textContent = r.R.toFixed(2) + ' mΩ';
+      $('out-l').textContent = r.L.toFixed(1) + ' μH';
+      $('actual-i').textContent = isFinite(r.I) ? r.I.toFixed(0) + ' A' : '∞';
+      $('actual-pf').textContent = r.pf.toFixed(3);
+      const dI = (r.I - c.isc) / c.isc * 100, dpf = r.pf - c.pf;
+      $('out-err').textContent = (dI >= 0 ? '+' : '') + dI.toFixed(1) + ' % I   |   ' + (dpf >= 0 ? '+' : '') + dpf.toFixed(3) + ' pf';
+      const st = $('out-status');
+      st.className = 'stat-val';
+      const over = !isFinite(r.I) || r.I > BENCH_MAX_A * 1.05;
+      if (over) { st.textContent = 'OVER 1.5 kA BENCH LIMIT - LATCH BLOCKED'; st.classList.add('bad'); }
+      else if (Math.abs(dI) <= 5 && Math.abs(dpf) <= 0.05) { st.textContent = 'IN TOLERANCE (±5 % I, ±0.05 pf)'; st.classList.add('ok'); }
+      else { st.textContent = 'OUT OF TOLERANCE - adjust bits or accept'; st.classList.add('warn'); }
+      $('btn-latch').disabled = S.latched || over;
+      $('btn-autosolve').disabled = S.latched;
+      $('btn-bank-ok').disabled = !S.latchedReady;
+    }
+    function latchContactors() {
+      if (!S.cfg || S.latched) return;
+      S.latched = true;
+      log('PLC contactors latching (' + S.cfg.labels.length + ' pole bank)...', 'warn');
+      renderBank();
+      S.t.latch = setTimeout(() => {
+        S.latchedReady = true;
+        updateBankOutputs();
+        log('Bank contactors LATCHED and synchronized', 'ok');
+      }, 600);
+    }
+
+    /* ================= PAGE 3 : PNEUMATICS ================= */
+    function renderPneu() {
+      const cont = $('pneumatic-container');
+      cont.innerHTML = '';
+      if (!S.cfg) return;
+      S.cfg.labels.forEach((lb, i) => {
+        cont.innerHTML +=
+          '<div class="pole-fixture ' + (S.clamped || S.engaging ? 'clamped' : '') + '" id="pole-' + i + '">' +
+          '<div class="pneumatic-rod rod-top"></div>' +
+          '<div class="mcb-body"><div class="dut-switch"></div><span style="font-size:14px;font-weight:bold;color:' + COLORS[lb] + ';">' + lb + '</span></div>' +
+          '<div class="pneumatic-rod rod-bot"></div></div>';
+      });
+      updatePneuStatus();
+    }
+    function updatePneuStatus() {
+      const el = $('clamp-status');
+      if (S.clamped) { el.textContent = '6.8 BAR / ALL POLES ESTABLISHED'; el.className = 'stat-val ok'; }
+      else if (S.engaging) { el.textContent = 'PRESSURIZING... ' + S.pressure.toFixed(1) + ' BAR'; el.className = 'stat-val warn'; }
+      else { el.textContent = 'DEPRESSURIZED (0.0 BAR)'; el.className = 'stat-val bad'; }
+      $('btn-engage').disabled = S.clamped || S.engaging || !S.cfg;
+      $('btn-mount-ok').disabled = !S.clamped;
+    }
+    function engagePneumatics() {
+      if (S.clamped || S.engaging || !S.cfg) return;
+      S.engaging = true; S.pressure = 0;
+      document.querySelectorAll('.pole-fixture').forEach(p => p.classList.add('clamped'));
+      log('Pneumatic cylinders engaging', 'warn');
+      S.t.press = setInterval(() => {
+        S.pressure = Math.min(6.8, S.pressure + 0.85);
+        if (S.pressure >= 6.8) {
+          clearInterval(S.t.press);
+          S.engaging = false; S.clamped = true;
+          log('Clamp pressure 6.8 bar - all poles established', 'ok');
+        }
+        updatePneuStatus();
+      }, 100);
+      updatePneuStatus();
+    }
+
+    /* ================= PAGE 4 : INTERLOCKS ================= */
+    function interlockList() {
+      return [
+        { k: 'Hardware E-Stop (SIRIUS relay)', ok: !S.estop, val: S.estop ? 'PRESSED / TRIPPED' : 'ARMED / CLEAR' },
+        { k: 'Armored blast door + pneumatic deadbolt', ok: S.door, val: S.door ? 'CLOSED / LOCK ENGAGED' : 'OPEN / LOCK RELEASED' },
+        { k: 'Pneumatic transducer feedback', ok: S.clamped, val: S.clamped ? '6.8 BAR (OK)' : '0.0 BAR (NOT CLAMPED)' },
+        { k: 'R-L bank contactors', ok: S.latched && S.latchedReady, val: S.latched && S.latchedReady ? 'LATCHED / SYNCED' : 'NOT LATCHED' },
+        { k: 'Resistor bank temperature', ok: S.bankTemp < 60, id: 'il-temp', val: S.bankTemp.toFixed(1) + ' °C ' + (S.bankTemp < 60 ? '(NOMINAL)' : '(OVER-TEMP)') },
+        { k: 'Exhaust fan (behind DUT)', ok: true, val: S.fanOn ? 'RUNNING (PURGING GASES)' : 'STANDBY / READY' }
+      ];
+    }
+    function interlocksOk() { return interlockList().every(x => x.ok); }
+    function renderInterlocks() {
+      $('il-rows').innerHTML = interlockList().map(x =>
+        '<div class="stat-row"><span>' + x.k + '</span><span class="stat-val ' + (x.ok ? 'ok' : 'bad') + '"' + (x.id ? ' id="' + x.id + '"' : '') + '>' + x.val + '</span></div>').join('');
+      const ok = interlocksOk();
+      $('lamp-fault').classList.toggle('lit', !ok);
+      $('lamp-ready').classList.toggle('lit', ok);
+      $('btn-arm').disabled = !ok;
+      $('btn-door').textContent = S.door ? '🔓 Unlock & Open Blast Door' : '🔒 Close & Lock Blast Door';
+      $('btn-estop').textContent = S.estop ? '↺ Release E-Stop' : '⛔ Press E-Stop (test)';
+      $('enclosure-svg').innerHTML = enclosureSVG(ok);
+    }
+    function toggleDoor() { S.door = !S.door; log('Blast door ' + (S.door ? 'CLOSED, deadbolt engaged' : 'OPENED, deadbolt released'), S.door ? 'ok' : 'warn'); renderInterlocks(); }
+    function toggleEstop() { S.estop = !S.estop; log('E-Stop ' + (S.estop ? 'PRESSED' : 'released'), S.estop ? 'bad' : 'ok'); renderInterlocks(); }
+    function armFiring() {
+      if (!interlocksOk()) return;
+      log('Firing sequence ARMED - all interlocks satisfied', 'ok');
+      advance(5);
+    }
+    function enclosureSVG(ok) {
+      const doorOpen = !S.door;
+      return '<svg viewBox="0 0 300 270" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect x="30" y="238" width="200" height="10" fill="#333"/>' +
+        '<rect x="118" y="14" width="14" height="34" fill="#c9a227"/><rect x="113" y="42" width="24" height="9" fill="#a8861a"/>' +
+        '<rect x="40" y="50" width="180" height="188" fill="#e07000" stroke="#7a3d00" stroke-width="2"/>' +
+        '<rect x="58" y="70" width="110" height="146" fill="#1b1f24" stroke="#5a2e00" stroke-width="3"/>' +
+        '<circle cx="113" cy="142" r="36" fill="#2a2f36" stroke="#666"/>' +
+        '<g class="fan' + (S.fanOn ? ' spin' : '') + '"><line x1="113" y1="112" x2="113" y2="172" stroke="#9aa" stroke-width="5"/><line x1="83" y1="142" x2="143" y2="142" stroke="#9aa" stroke-width="5"/></g>' +
+        '<rect x="62" y="136" width="102" height="8" fill="#888"/>' +
+        '<rect x="101" y="112" width="24" height="52" fill="#d4d4d4" stroke="#666"/><rect x="108" y="124" width="10" height="14" fill="#333"/>' +
+        '<path d="M113 51 V112" stroke="#b87333" stroke-width="5" stroke-dasharray="3 2"/>' +
+        '<ellipse cx="113" cy="86" rx="15" ry="6" fill="none" stroke="#ffd400" stroke-width="4"/>' +
+        '<path d="M113 164 V200 Q113 226 150 226 L150 238" fill="none" stroke="#b87333" stroke-width="5" stroke-dasharray="3 2"/>' +
+        (doorOpen
+          ? '<polygon points="58,70 14,88 14,204 58,216" fill="rgba(120,200,255,0.12)" stroke="#ffb060" stroke-width="3"/>'
+          : '<rect x="58" y="70" width="110" height="146" fill="rgba(120,200,255,0.10)" stroke="#ffb060" stroke-width="3"/><rect x="168" y="132" width="14" height="10" fill="#ccc"/>') +
+        '<circle cx="200" cy="96" r="13" fill="' + (ok ? '#4a0000' : '#ff2020') + '" stroke="#111" stroke-width="2"/>' +
+        '<text x="200" y="124" text-anchor="middle" font-size="9" fill="#fff" font-weight="bold">FAULT</text>' +
+        '<circle cx="200" cy="158" r="13" fill="' + (ok ? '#00e000' : '#003a00') + '" stroke="#111" stroke-width="2"/>' +
+        '<text x="200" y="186" text-anchor="middle" font-size="9" fill="#fff" font-weight="bold">READY</text>' +
+        '<text x="130" y="262" text-anchor="middle" font-size="10" fill="' + (S.door ? '#00ff00' : '#ff2020') + '" font-weight="bold">' + (S.door ? 'SAFETY LOCK ENGAGED' : 'SAFETY LOCK RELEASED') + '</text>' +
+        '</svg>';
+    }
+
+    /* ================= PAGE 5 : FAULT INJECTION ================= */
+    function renderP5() {
+      const c = S.cfg;
+      if (c) {
+        const r = bankResult();
+        $('live-setup-i').textContent = r.I.toFixed(0) + ' A rms @ α = ' + c.alpha + '°';
+      }
+      $('sens-p').textContent = S.clamped ? '6.8 bar' : '0.0 bar';
+      updateFanTile(); updateTempTile();
+      buildSLD();
+      sldState(S.sld);
+      drawScope(S.shot ? 1 : 0);
+      if (S.shot) showShotResults();
+      else {
+        $('res-ip').textContent = '-- A'; $('res-i2t').textContent = '-- A²s'; $('res-time').textContent = '-- ms';
+        const vb = $('shot-verdict'); vb.className = 'verdict-box'; vb.textContent = 'SYSTEM IDLE'; vb.style.color = '#666'; vb.style.borderColor = '';
+        $('sens-i').textContent = '0 A';
+      }
+      $('btn-fire').disabled = !!S.shot || S.firing || !interlocksOk();
+      $('btn-rep-ok').disabled = !S.shot || S.firing;
+    }
+    function updateFanTile() { const e = $('sens-fan'); e.textContent = S.fanOn ? 'RUNNING' : 'STANDBY'; e.style.color = S.fanOn ? 'var(--accent-green)' : ''; }
+    function updateTempTile() { $('sens-temp').textContent = S.bankTemp.toFixed(1) + ' °C'; }
+
+    function buildSLD() {
+      const svg = $('sld-svg');
+      if (!S.cfg) { svg.innerHTML = ''; return; }
+      const n = S.cfg.labels.length;
+      const startY = 60 + (4 - n) * 28, rowH = 56, xBus = 405;
+      const yLast = startY + (n - 1) * rowH;
+      let h = '';
+      S.cfg.labels.forEach((lb, i) => {
+        const y = startY + i * rowH, col = COLORS[lb];
+        h += '<g class="pg" id="pg-' + i + '">' +
+          '<text x="4" y="' + (y + 4) + '" class="sld-text" style="fill:' + col + '">' + lb + '</text>' +
+          '<circle cx="44" cy="' + y + '" r="9" fill="none" stroke="' + col + '" stroke-width="2"/>' +
+          '<text x="44" y="' + (y + 4) + '" text-anchor="middle" class="sld-text" style="fill:' + col + '">~</text>' +
+          '<path d="M53 ' + y + ' L82 ' + y + '" class="sld-line"/>' +
+          '<rect x="82" y="' + (y - 11) + '" width="50" height="22" class="comp"/>' +
+          '<text x="107" y="' + (y + 4) + '" text-anchor="middle" class="sld-text">R + L</text>' +
+          '<path d="M132 ' + y + ' L162 ' + y + '" class="sld-line"/>' +
+          '<rect x="162" y="' + (y - 11) + '" width="34" height="22" class="comp scr-box"/>' +
+          '<text x="179" y="' + (y + 4) + '" text-anchor="middle" class="sld-text">SCR</text>' +
+          '<path d="M196 ' + y + ' L262 ' + y + '" class="sld-line"/>' +
+          '<circle cx="228" cy="' + y + '" r="8" fill="#000" stroke="#00e5ff" stroke-width="2"/>' +
+          '<rect x="262" y="' + (y - 11) + '" width="44" height="22" class="comp" style="stroke:#00e5ff"/>' +
+          '<path d="M266 ' + y + ' L302 ' + y + '" class="mcb-closed"/>' +
+          '<path d="M266 ' + y + ' L290 ' + (y - 14) + '" class="mcb-open"/>' +
+          '<text x="284" y="' + (y + 24) + '" text-anchor="middle" class="sld-text">DUT</text>' +
+          '<path d="M306 ' + y + ' L' + xBus + ' ' + y + '" class="sld-line"/>' +
+          '</g>';
+      });
+      h += '<path d="M' + xBus + ' ' + startY + ' L' + xBus + ' ' + (yLast + 30)+ '" stroke="#777" stroke-width="4" fill="none"/>' +
+           '<text x="' + xBus + '" y="' + (yLast + 46) + '" text-anchor="end" class="sld-text">COMMON RETURN BUS</text>' +
+           '<circle cx="14" cy="296" r="6" fill="#000" stroke="#00e5ff" stroke-width="2"/><text x="26" y="300" class="sld-text">Rogowski (Ip)</text>' +
+           '<rect x="120" y="290" width="16" height="10" class="comp" style="stroke:#00e5ff"/><text x="142" y="300" class="sld-text">DUT MCB</text>';
+      svg.innerHTML = h;
+    }
+    function sldState(st) {
+      S.sld = st;
+      document.querySelectorAll('.pg').forEach(g => {
+        g.setAttribute('class', 'pg' + (st === 'fired' ? ' on' : st === 'open' ? ' open' : st === 'cut' ? ' cut' : ''));
+      });
+    }
+
+    function niceMax(v) { return v > 800 ? Math.ceil(v / 200) * 200 : Math.ceil(v / 50) * 50; }
+    
+    function drawScope(p, forceWhite = false) {
+      S.scopeP = p;
+      const cv = $('scopeCanvas'); if (!cv) return;
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return;
+      const dpr = window.devicePixelRatio || 1;
+      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = r.width, h = r.height, padL = 46, padR = 10, padT = 10, padB = 22;
+      const pw = w - padL - padR, ph = h - padT - padB, mid = padT + ph / 2;
+      const line = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+
+      ctx.fillStyle = forceWhite ? '#ffffff' : '#000000';
+      ctx.fillRect(0, 0, w, h);
+      
+      ctx.lineWidth = 1; 
+      ctx.strokeStyle = forceWhite ? '#e0e0e0' : '#1c1c1c';
+      for (let i = 0; i <= 8; i++) line(padL + pw * i / 8, padT, padL + pw * i / 8, padT + ph);
+      for (let j = 0; j <= 8; j++) line(padL, padT + ph * j / 8, padL + pw, padT + ph * j / 8);
+      
+      ctx.strokeStyle = forceWhite ? '#888888' : '#444444'; 
+      line(padL, mid, padL + pw, mid);
+
+      let ymax = 1000;
+      if (S.shot) ymax = S.shot.ymax;
+      else if (S.cfg) ymax = niceMax(Math.SQRT2 * bankResult().I * 1.7);
+      
+      ctx.fillStyle = forceWhite ? '#000000' : '#777777'; 
+      ctx.font = '10px Consolas, monospace';
+      
+      for (let j = 0; j <= 8; j += 2) ctx.fillText(String(Math.round(ymax * (4 - j) / 4)), 4, padT + ph * j / 8 + 4);
+      for (let i = 0; i <= 8; i++) ctx.fillText(String(i * 5), padL + pw * i / 8 - 5, h - 6);
+      ctx.fillText('ms', w - 22, h - 6); ctx.fillText('A', 4, padT + 4 - 0);
+
+      if (S.cfg) {
+        let lx = padL + 8;
+        S.cfg.labels.forEach(lb => { 
+          ctx.fillStyle = COLORS[lb]; 
+          ctx.fillRect(lx, padT + 6, 10, 3); 
+          ctx.fillStyle = forceWhite ? '#000000' : COLORS[lb]; 
+          ctx.fillText(lb, lx + 14, padT + 12); 
+          lx += 46; 
+        });
+      }
+      const shot = S.shot;
+      if (!shot || p <= 0) return;
+      const upto = Math.max(2, Math.floor(p * NS));
+      shot.channels.forEach(ch => {
+        ctx.strokeStyle = ch.color; ctx.lineWidth = 1.8; ctx.beginPath();
+        for (let k = 0; k < upto; k++) {
+          const x = padL + pw * k / (NS - 1), y = mid - (ch.data[k] / ymax) * (ph / 2);
+          if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      });
+      ctx.font = '10px Consolas, monospace';
+      if (shot.trip && p * WIN_MS >= shot.tOpen) {
+        const x = padL + pw * shot.tOpen / WIN_MS;
+        ctx.setLineDash([4, 4]); ctx.strokeStyle = '#ff2020'; line(x, padT, x, padT + ph); ctx.setLineDash([]);
+        ctx.fillStyle = '#ff2020'; ctx.fillText('MCB OPEN ' + shot.tOpen.toFixed(1) + ' ms', Math.min(x + 4, w - 110), padT + 26);
+      }
+      if (!shot.trip && p >= 1) { ctx.fillStyle = '#ff2020'; ctx.fillText('NO TRIP - BENCH LIMITER CUT @ 40 ms', padL + 8, padT + 26); }
+    }
+
+    /* ---------- fault simulation ---------- */
+    function simulateShot() {
+      const c = S.cfg, res = bankResult();
+      const phi = Math.acos(Math.min(1, res.pf));
+      const tau = (1 - res.pf) < 1e-4 ? 0 : Math.tan(phi) / W;
+      const Ipk = Math.SQRT2 * res.I;
+      const ratio = res.I / c.In, cv = CURVES[c.curve];
+      let trip = false, zone = 'NONE', tOpen = null;
+      if (ratio >= cv.hi) { trip = true; zone = 'INSTANT'; tOpen = 2.5 + Math.random() * 3.0; }
+      else if (ratio >= cv.lo) { trip = true; zone = 'BAND'; tOpen = 6 + Math.random() * 10; }
+      const tArc = 1.5 + Math.random() * 1.5;
+      if (trip) tOpen = +tOpen.toFixed(2);
+      const dt = 1 / FS;
+
+      const channels = c.labels.map(lb => {
+        const a = (c.alpha + SHIFT[lb]) * Math.PI / 180;
+        const data = new Float32Array(NS);
+        let peak = 0, i2t = 0;
+        for (let k = 0; k < NS; k++) {
+          const t = k * dt;
+          let v = Math.sin(W * t + a - phi);
+          if (tau > 0) v -= Math.sin(a - phi) * Math.exp(-t / tau);
+          let env = 1;
+          if (trip) { const ts = t * 1000; if (ts > tOpen) env = Math.max(0, 1 - (ts - tOpen) / tArc); }
+          const i = Ipk * v * env;
+          data[k] = i;
+          if (Math.abs(i) > peak) peak = Math.abs(i);
+          i2t += i * i * dt;
+        }
+        let verdict = 'PASS';
+        if (!trip || i2t > c.i2tLimit) verdict = 'FAIL';
+        return { label: lb, color: COLORS[lb], data, peak, i2t, verdict };
+      });
+      const overall = channels.every(ch => ch.verdict === 'PASS');
+      let reason;
+      if (!trip) reason = 'NO MAGNETIC TRIP - current below lower band edge';
+      else if (channels.some(ch => ch.i2t > c.i2tLimit)) reason = 'I²t LIMIT EXCEEDED';
+      else if (zone === 'BAND') reason = 'TRIPPED IN TOLERANCE BAND (not guaranteed instantaneous)';
+      else reason = 'ALL POLES CLEARED (GANGED)';
+      return {
+        trip, zone, tOpen, tArc, ratio, res, channels, overall, reason,
+        clear: trip ? tOpen + tArc : null,
+        ymax: niceMax(Math.max.apply(null, channels.map(ch => ch.peak)) * 1.12),
+        maxIp: Math.max.apply(null, channels.map(ch => ch.peak)),
+        maxI2t: Math.max.apply(null, channels.map(ch => ch.i2t)),
+        bankTempAtShot: S.bankTemp
+      };
+    }
+
+    function fireSCR() {
+      if (S.shot || S.firing) return;
+      const vb = $('shot-verdict');
+      if (!interlocksOk()) {
+        vb.className = 'verdict-box fail'; vb.style.color = ''; vb.textContent = 'INTERLOCK OPEN - FIRE BLOCKED';
+        log('Fire blocked: interlock not satisfied', 'bad');
+        $('btn-fire').disabled = true;
+        return;
+      }
+      S.firing = true;
+      $('btn-fire').disabled = true; $('btn-rep-ok').disabled = true;
+      S.shot = simulateShot();
+      S.fanOn = true; updateFanTile();
+      vb.className = 'verdict-box'; vb.textContent = 'FAULT INJECTED - CAPTURING DAQ...';
+      vb.style.color = 'var(--accent-gold)'; vb.style.borderColor = 'var(--accent-gold)';
+      sldState('fired');
+      log('SCR fired at α=' + S.cfg.alpha + '° - ' + S.cfg.labels.length + ' pole(s), Isc=' + S.shot.res.I.toFixed(0) + ' A rms', 'warn');
+
+      const shot = S.shot, DUR = 1800, t0 = performance.now();
+      let opened = false;
+      function frame(now) {
+        const p = Math.min(1, (now - t0) / DUR);
+        drawScope(p);
+        const k = Math.min(NS - 1, Math.floor(p * NS));
+        let m = 0; shot.channels.forEach(ch => { m = Math.max(m, Math.abs(ch.data[k])); });
+        $('sens-i').textContent = m.toFixed(0) + ' A';
+        if (shot.trip && !opened && p * WIN_MS >= shot.tOpen) { opened = true; sldState('open'); }
+        if (p < 1) S.t.anim = requestAnimationFrame(frame); else finishShot();
+      }
+      S.t.anim = requestAnimationFrame(frame);
+    }
+    function finishShot() {
+      S.firing = false;
+      if (!S.shot.trip) sldState('cut');
+      S.bankTemp += 2 + S.shot.res.I / 500;
+      updateTempTile();
+      showShotResults();
+      log('Shot complete: ' + S.shot.reason + ' | Ip=' + S.shot.maxIp.toFixed(0) + ' A, I²t=' + S.shot.maxI2t.toFixed(0) + ' A²s', S.shot.overall ? 'ok' : 'bad');
+      clearTimeout(S.t.fan);
+      S.t.fan = setTimeout(() => { S.fanOn = false; updateFanTile(); if (S.page === 4) renderInterlocks(); }, 5000);
+      $('btn-rep-ok').disabled = false;
+      $('btn-fire').disabled = true;
+    }
+    function showShotResults() {
+      const s = S.shot;
+      $('res-ip').textContent = s.maxIp.toFixed(0) + ' A';
+      $('res-i2t').textContent = s.maxI2t.toFixed(0) + ' A²s';
+      $('res-time').textContent = s.trip ? s.clear.toFixed(1) + ' ms (open ' + s.tOpen.toFixed(1) + ' + arc ' + s.tArc.toFixed(1) + ')' : 'NO TRIP';
+      const vb = $('shot-verdict');
+      vb.className = 'verdict-box ' + (s.overall ? 'pass' : 'fail');
+      vb.style.color = ''; vb.style.borderColor = '';
+      vb.textContent = (s.overall ? 'PASS: ' : 'FAIL: ') + s.reason;
+      $('sens-i').textContent = '0 A';
+    }
+
+    /* ================= PAGE 6 : REPORT ================= */
+    function generateReport() {
+      if (!S.shot || S.firing) return;
+      
+      // 1. Render white background explicitly for the exported scope image
+      drawScope(1, true);
+      
+      const d = new Date(), pad = n => String(n).padStart(2, '0');
+      const day = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      S.report = {
+        id: 'GND-' + day.replace(/-/g, '') + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()),
+        date: day + ' ' + d.toTimeString().slice(0, 8),
+        img: $('scopeCanvas').toDataURL('image/png'),
+        engineer: $('cfg-eng').value.trim() || '--',
+        dutId: $('cfg-dut').value.trim() || '--'
+      };
+      
+      // 2. Restore dark mode display on the main UI
+      drawScope(1, false);
+      
+      log('Report ' + S.report.id + ' generated', 'ok');
+      advance(6);
+    }
+    
+    function renderReport() {
+      const r = S.report, s = S.shot, c = S.cfg;
+      if (!r || !s || !c) return;
+      const b = S.bank, res = s.res;
+      const bits = n => n.toString(2).padStart(NBITS, '0');
+      const set = (id, t) => { $(id).textContent = t; };
+      set('rep-id', r.id); set('rep-eng', r.engineer); set('rep-sign', r.engineer);
+      set('rep-date', r.date); set('rep-dut', r.dutId); set('rep-poles', c.poleName);
+      set('rep-rating', c.In + ' A, curve ' + c.curve + ', Icn ' + (c.icn / 1000) + ' kA');
+      set('rep-target-i', c.isc); set('rep-pf', c.pf); set('rep-alpha', c.alpha + '°');
+      set('rep-code', 'R=0b' + bits(b.rb) + ' / L=0b' + bits(b.lb));
+      set('rep-rl', res.R.toFixed(2) + ' mΩ / ' + res.L.toFixed(1) + ' μH');
+      set('rep-synth', res.I.toFixed(0) + ' A / ' + res.pf.toFixed(3));
+      set('rep-temp', s.bankTempAtShot.toFixed(1) + ' °C (blower active)');
+      $('rep-scope').src = r.img;
+      $('rep-table-body').innerHTML = s.channels.map(ch =>
+        '<tr><td style="font-weight:bold;">' + ch.label + '</td>' +
+        '<td style="font-weight:bold;">' + ch.peak.toFixed(0) + ' A</td>' +
+        '<td>' + ch.i2t.toFixed(0) + ' A²s</td>' +
+        '<td>' + (s.trip ? s.tOpen.toFixed(1) + ' ms' : '--') + '</td>' +
+        '<td>' + (s.trip ? s.clear.toFixed(1) + ' ms' : 'NO TRIP') + '</td>' +
+        '<td style="font-weight:bold;" class="' + (ch.verdict === 'PASS' ? 'ok' : 'bad') + '">' + ch.verdict + '</td></tr>').join('');
+      const cv = CURVES[c.curve];
+      set('rep-analysis', 'Isc/In = ' + s.ratio.toFixed(1) + '×. Curve ' + c.curve + ' magnetic band = ' + (cv.lo * c.In).toFixed(0) + ' - ' + (cv.hi * c.In).toFixed(0) +
+        ' A. Result: ' + s.reason + '. I²t acceptance limit: ' + c.i2tLimit.toLocaleString() + ' A²s.');
+      const vb = $('rep-verdict');
+      vb.className = 'verdict-box ' + (s.overall ? 'pass' : 'fail');
+      vb.textContent = s.overall ? 'DUT TRIP TEST: PASS' : 'DUT TRIP TEST: FAIL';
+      set('rep-note', 'Notes: Simulated bench record. Isc is the RMS symmetrical prospective current synthesized at 3.0 V RMS through the binary R-L bank including source impedance. ' +
+        'Ip and I²t are computed from 100 kHz samples of each pole channel. This bench verifies magnetic (instantaneous) tripping up to 1.5 kA; it is not an Icn / Ics breaking-capacity ' +
+        'certification under IEC 60898-1:2015, which requires the rated fault level in an accredited high-power laboratory.');
+    }
+
+    /* ================= INIT ================= */
+    window.addEventListener('resize', () => { if (S.page === 5) drawScope(S.scopeP); });
+    setInterval(() => {                                   // passive cooling of the resistor bank
+      if (S.bankTemp > 32) {
+        S.bankTemp = Math.max(32, S.bankTemp - 0.4);
+        if ($('sens-temp')) updateTempTile();
+        const it = $('il-temp'); if (it) it.textContent = S.bankTemp.toFixed(1) + ' °C ' + (S.bankTemp < 60 ? '(NOMINAL)' : '(OVER-TEMP)');
+      }
+    }, 1000);
+    log('System ready - configure the DUT on Step 1');
+    go(1);
+  </script>
+</body>
+</html>
