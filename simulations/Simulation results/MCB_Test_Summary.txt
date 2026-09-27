@@ -1,0 +1,40 @@
+============================================================
+AUTOMATED HIGH-CURRENT MCB TEST SYSTEM
+SIMULATION TEST REPORT
+============================================================
+
+SOURCE PARAMETERS
+Voltage        : 3.00 V RMS
+Frequency      : 50.00 Hz
+Target Current : 1000.00 A RMS
+
+TEST CONDITION
+Target PF      : 0.600
+R              : 1.800 mOhm
+L              : 7.800 uH
+XL             : 2.450 mOhm
+Z              : 3.041 mOhm
+
+IEC 60898-1 MAGNETIC TRIP CONTEXT
+MCB Type       : C (In = 63 A)
+Magnetic band  : 315.0 A to 630.0 A
+
+MEASUREMENTS (MEASURED from simulated DAQ data)
+Current        : 986.68 A RMS
+Power Factor   : 0.592
+Peak Current   : 1395.37 A
+Trip Time      : 35.002 ms
+Post Trip I    : 0.0000 A RMS
+
+PASS/FAIL
+Current        : true
+Power Factor   : true
+MCB Trip       : true
+Interruption   : true
+
+FINAL RESULT
+SIMULATION TEST PASS
+
+NOTE:
+The limits used in this MATLAB model are simulation criteria only and do not constitute an IEC 60898-1 certification result.
+============================================================
